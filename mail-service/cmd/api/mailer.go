@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"html/template"
+	"log"
 	"time"
 
 	"github.com/vanng822/go-premailer/premailer"
@@ -39,11 +40,13 @@ func (m *Mail) SendSMTPMessage(msg Message) error {
 		msg.FromName = m.FromName
 	}
 
+	// log.Println(msg.Data)
+
 	data := map[string]any{
 		"message": msg.Data,
 	}
 
-	msg.Data = data
+	msg.DataMap = data
 
 	formattedMessage, err := m.buildHTMLMessage(msg)
 	if err != nil {
@@ -67,6 +70,7 @@ func (m *Mail) SendSMTPMessage(msg Message) error {
 
 	smtpClient, err := server.Connect()
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 
@@ -86,6 +90,7 @@ func (m *Mail) SendSMTPMessage(msg Message) error {
 
 	err = email.Send(smtpClient)
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 
@@ -111,11 +116,11 @@ func (m *Mail) buildHTMLMessage(msg Message) (string, error) {
 		return "", err
 	}
 
-	return formattedMessage, err
+	return formattedMessage, nil
 }
 
 func (m *Mail) buildPlainTextMessage(msg Message) (string, error) {
-	templateToRender := "./templates/mail.html.gohtml"
+	templateToRender := "./templates/mail.plain.gohtml"
 
 	t, err := template.New("email-plain").ParseFiles(templateToRender)
 	if err != nil {
@@ -129,7 +134,7 @@ func (m *Mail) buildPlainTextMessage(msg Message) (string, error) {
 
 	plainMessage := tpl.String()
 
-	return plainMessage, err
+	return plainMessage, nil
 }
 
 func (m *Mail) inlineCSS(s string) (string, error) {
